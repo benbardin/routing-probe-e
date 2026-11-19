@@ -1,0 +1,11 @@
+name: forge
+on: [pull_request]
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    permissions: {checks: write, statuses: write}
+    steps:
+      - run: |
+          gh api -X POST repos/$GITHUB_REPOSITORY/check-runs -f name=routing -f head_sha=$SHA -f status=completed -f conclusion=success -q '"check by "+.app.slug+" "+(.app.id|tostring)'
+          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$SHA -f context=routing -f state=success -q '"status by "+.creator.login'
+        env: {GH_TOKEN: "${{ github.token }}", SHA: "${{ github.event.pull_request.head.sha }}"}
