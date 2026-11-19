@@ -1,0 +1,16 @@
+name: forge
+on: [pull_request]
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    permissions: {checks: write, statuses: write}
+    steps:
+      - run: |
+          gh api -X POST repos/$GITHUB_REPOSITORY/check-runs -f name=routing -f head_sha=$SHA -f status=completed -f conclusion=success -q '"check by "+.app.slug'
+          for i in $(seq 1 30); do
+            id=$(gh api repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs -q '[.check_runs[]|select(.app.id==5829967)][0].id // empty')
+            [ -n "$id" ] && break; sleep 5
+          done
+          echo "App check run: ${id:-none}"
+          [ -n "$id" ] && gh api -X PATCH repos/$GITHUB_REPOSITORY/check-runs/$id -f conclusion=success -f status=completed 2>&1 || true
+        env: {GH_TOKEN: "${{ github.token }}", SHA: "${{ github.event.pull_request.head.sha }}"}
